@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb';
+import * as fs from 'fs';
 
 async function createIndexIfNotExists(collection: any): Promise<void> {
     try {
@@ -65,16 +66,15 @@ async function processDocuments(dbName: string, collectionName: string) {
     const threshold = 0;
     const thresholdFieldTypes: string[] = [];
 
+    // Writing to CSV file
+    const csvOutput = fs.createWriteStream('output.csv');
+    csvOutput.write('Field,Data Type,Document Count\n');
     for (const [fieldType, count] of Object.entries(fieldTypeCounts)) {
+        const [field, dataType] = fieldType.split(':');
         const percentage = count / totalDocuments;
         if (percentage >= threshold) {
-            thresholdFieldTypes.push(fieldType);
+            csvOutput.write(`${field},${dataType},${count}\n`);
         }
-    }
-
-    console.log('Field-type pairs and their document counts:');
-    for (const [fieldType, count] of Object.entries(fieldTypeCounts)) {
-        console.log(`${fieldType}: ${count} documents`);
     }
 
     await client.close();
