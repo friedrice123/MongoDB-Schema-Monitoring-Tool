@@ -1,7 +1,8 @@
 import { MongoClient } from 'mongodb';
 import * as fs from 'fs';
 import { ObjectId } from 'mongodb';
-require('dotenv').config();
+const dotenv = require('dotenv')
+dotenv.config();
 
 async function createIndexIfNotExists(collection: any): Promise<void> {
     try {
@@ -65,7 +66,7 @@ async function processDocuments(connectionString: string, dbName: string, collec
             }
 
             // Update startTimestamp to the next document's timestamp
-            startTimestamp = nextDoc[0]._id.getTimestamp();
+            startTimestamp = nextDoc[0]?._id?.getTimestamp() || new Date();
             continue; // Skip processing and continue with the new timestamp
         }
 
@@ -104,7 +105,13 @@ const connectionString = process.env.CONNECTION_STRING ;
 if (!connectionString) {
     throw new Error('Missing CONNECTION_STRING in environment variables');
 }
-const dbName = 'sample_training';
-const collectionName = 'routes';
+const dbName = process.argv[2];
+if (!dbName) {
+    throw new Error('Please specify the database name');
+}
+const collectionName = process.argv[3];
+if (!collectionName) {
+    throw new Error('Please specify the collection name');
+}
 
 processDocuments(connectionString, dbName, collectionName).catch(error => console.error(error));
