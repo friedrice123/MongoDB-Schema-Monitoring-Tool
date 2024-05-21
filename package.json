@@ -1,10 +1,18 @@
 {
-  "name": "schema_try",
+  "name": "schema_monitor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/friedrice123/MongoDB-Schema-Monitoring-Tool.git"
+  },
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "lint": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -15,5 +23,8 @@
     "dotenv": "^16.4.5",
     "mongodb": "^6.6.2",
     "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2"
   }
 }
