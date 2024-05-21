@@ -40,31 +40,40 @@ async function processDocuments(dbName: string, collectionName: string) {
     const fieldTypeCounts: Record<string, number> = {};
     const startTime_all = Date.now();
 
-    const allDocs = await collection.find({}).project({ _id: 1 }).toArray();
+    let startTimestamp = new Date(0);  // Start from the epoch time
+    const intervalWindow = 25 * 1000;  // Interval window in milliseconds
 
-    // Extract timestamps from ObjectID and sort documents
-    const docsWithTimestamp = allDocs.map(doc => ({
-        _id: doc._id,
-        timestamp: doc._id.getTimestamp(),
-    })).sort((a, b) => a.timestamp - b.timestamp);
+    while (true) {
+        const endTimestamp = new Date(startTimestamp.getTime() + intervalWindow);
 
-    let batchStartTime = docsWithTimestamp[0].timestamp;
-    let batchDocs = [];
+        const batchDocs = await collection
+            .find({ _id: { $gt: ObjectId.createFromTime(startTimestamp.getTime() / 1000), $lt: ObjectId.createFromTime(endTimestamp.getTime() / 1000) } })
+            .project({ _id: 1 })
+            .toArray();
 
-    for (const docWithTimestamp of docsWithTimestamp) {
-        const docCreationTime = docWithTimestamp.timestamp;
-        const intervalWindow = 25;
-        if ((docCreationTime - batchStartTime) / 1000 <= intervalWindow) {
-            batchDocs.push(docWithTimestamp._id);
-        } else {
-            await processBatch(collection, batchDocs, fieldTypeCounts);
-            batchStartTime = docCreationTime;
-            batchDocs = [docWithTimestamp._id];
+        if (batchDocs.length === 0) {
+            // Find the next document after the current endTimestamp
+            const nextDoc = await collection
+                .find({ _id: { $gt: ObjectId.createFromTime(endTimestamp.getTime() / 1000) } })
+                .sort({ _id: 1 })
+                .limit(1)
+                .project({ _id: 1 })
+                .toArray();
+
+            if (nextDoc.length === 0) {
+                break; // No more documents to process
+            }
+
+            // Update startTimestamp to the next document's timestamp
+            startTimestamp = nextDoc[0]._id.getTimestamp();
+            continue; // Skip processing and continue with the new timestamp
         }
-    }
 
-    if (batchDocs.length > 0) {
-        await processBatch(collection, batchDocs, fieldTypeCounts);
+        const batchDocIds = batchDocs.map(doc => doc._id);
+        await processBatch(collection, batchDocIds, fieldTypeCounts);
+
+        // Update startTimestamp to the endTimestamp for the next batch
+        startTimestamp = endTimestamp;
     }
 
     const endTime_all = Date.now();
@@ -100,6 +109,6 @@ async function processBatch(collection: any, batchDocs: any[], fieldTypeCounts: 
 }
 
 const dbName = 'sample_mflix';
-const collectionName = 'testing_schema';
+const collectionName = 'embedded_movies';
 
 processDocuments(dbName, collectionName).catch(error => console.error(error));
