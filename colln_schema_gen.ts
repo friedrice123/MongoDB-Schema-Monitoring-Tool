@@ -48,7 +48,7 @@ async function processDocuments(dbName: string, collectionName: string) {
 
         const batchDocs = await collection
             .find({ _id: { $gt: ObjectId.createFromTime(startTimestamp.getTime() / 1000), $lt: ObjectId.createFromTime(endTimestamp.getTime() / 1000) } })
-            .project({ _id: 1 })
+            .project({ _id: 0 })
             .toArray();
 
         if (batchDocs.length === 0) {
@@ -57,7 +57,6 @@ async function processDocuments(dbName: string, collectionName: string) {
                 .find({ _id: { $gt: ObjectId.createFromTime(endTimestamp.getTime() / 1000) } })
                 .sort({ _id: 1 })
                 .limit(1)
-                .project({ _id: 1 })
                 .toArray();
 
             if (nextDoc.length === 0) {
@@ -69,8 +68,21 @@ async function processDocuments(dbName: string, collectionName: string) {
             continue; // Skip processing and continue with the new timestamp
         }
 
-        const batchDocIds = batchDocs.map(doc => doc._id);
-        await processBatch(collection, batchDocIds, fieldTypeCounts);
+        // const batchDocIds = batchDocs.map(doc => doc._id);
+        // const cursor = collection.find({ _id: { $in: batchDocIds } }).project({ _id: 0 });
+        // const batchDocsArray = await cursor.toArray();
+
+        for (const doc of batchDocs) {
+            const flattenedDoc = flattenDocument(doc);
+            for (const [field, fieldType] of Object.entries(flattenedDoc)) {
+                const fieldTypePair = `${field}:${fieldType}`;
+                if (fieldTypeCounts[fieldTypePair]) {
+                    fieldTypeCounts[fieldTypePair] += 1;
+                } else {
+                    fieldTypeCounts[fieldTypePair] = 1;
+                }
+            }
+        }
 
         // Update startTimestamp to the endTimestamp for the next batch
         startTimestamp = endTimestamp;
@@ -91,24 +103,7 @@ async function processDocuments(dbName: string, collectionName: string) {
     await client.close();
 }
 
-async function processBatch(collection: any, batchDocs: any[], fieldTypeCounts: Record<string, number>) {
-    const cursor = collection.find({ _id: { $in: batchDocs } }).project({ _id: 0 });
-    const batchDocsArray = await cursor.toArray();
-
-    for (const doc of batchDocsArray) {
-        const flattenedDoc = flattenDocument(doc);
-        for (const [field, fieldType] of Object.entries(flattenedDoc)) {
-            const fieldTypePair = `${field}:${fieldType}`;
-            if (fieldTypeCounts[fieldTypePair]) {
-                fieldTypeCounts[fieldTypePair] += 1;
-            } else {
-                fieldTypeCounts[fieldTypePair] = 1;
-            }
-        }
-    }
-}
-
-const dbName = 'sample_mflix';
-const collectionName = 'embedded_movies';
+const dbName = 'sample_training';
+const collectionName = 'routes';
 
 processDocuments(dbName, collectionName).catch(error => console.error(error));
