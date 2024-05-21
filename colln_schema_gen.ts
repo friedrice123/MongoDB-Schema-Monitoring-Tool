@@ -1,4 +1,6 @@
 import { MongoClient } from 'mongodb';
+import * as fs from 'fs';
+import { ObjectId } from 'mongodb';
 
 async function createIndexIfNotExists(collection: any): Promise<void> {
     try {
@@ -16,6 +18,7 @@ function flattenDocument(doc: any, parentKey: string = '', sep: string = '.'): R
             if (Array.isArray(value)) {
                 items[newKey] = 'array';
             } else {
+                items[newKey] = 'object'; // include the parent object itself
                 Object.assign(items, flattenDocument(value, newKey, sep));
             }
         } else {
@@ -34,53 +37,69 @@ async function processDocuments(dbName: string, collectionName: string) {
     await createIndexIfNotExists(collection);
 
     const totalDocuments = await collection.countDocuments();
-    const batchSize = 1000;
     const fieldTypeCounts: Record<string, number> = {};
     const startTime_all = Date.now();
-    for (let i = 0; i < totalDocuments; i += batchSize) {
-        const startTime = Date.now();
 
-        const cursor = collection.find({}).skip(i).limit(batchSize).project({ _id: 0 });
-        const batchDocs = await cursor.toArray();
+    const allDocs = await collection.find({}).project({ _id: 1 }).toArray();
 
-        for (const doc of batchDocs) {
-            const flattenedDoc = flattenDocument(doc);
-            for (const [field, fieldType] of Object.entries(flattenedDoc)) {
-                const fieldTypePair = `${field}:${fieldType}`;
-                if (fieldTypeCounts[fieldTypePair]) {
-                    fieldTypeCounts[fieldTypePair] += 1;
-                } else {
-                    fieldTypeCounts[fieldTypePair] = 1;
-                }
-            }
+    // Extract timestamps from ObjectID and sort documents
+    const docsWithTimestamp = allDocs.map(doc => ({
+        _id: doc._id,
+        timestamp: doc._id.getTimestamp(),
+    })).sort((a, b) => a.timestamp - b.timestamp);
+
+    let batchStartTime = docsWithTimestamp[0].timestamp;
+    let batchDocs = [];
+
+    for (const docWithTimestamp of docsWithTimestamp) {
+        const docCreationTime = docWithTimestamp.timestamp;
+        const intervalWindow = 25;
+        if ((docCreationTime - batchStartTime) / 1000 <= intervalWindow) {
+            batchDocs.push(docWithTimestamp._id);
+        } else {
+            await processBatch(collection, batchDocs, fieldTypeCounts);
+            batchStartTime = docCreationTime;
+            batchDocs = [docWithTimestamp._id];
         }
-
-        const endTime = Date.now();
-        const iterationTime = (endTime - startTime) / 1000;
-        console.log(`Time taken for batch starting at ${i}: ${iterationTime.toFixed(2)} seconds`);
     }
+
+    if (batchDocs.length > 0) {
+        await processBatch(collection, batchDocs, fieldTypeCounts);
+    }
+
     const endTime_all = Date.now();
     const fullTime = (endTime_all - startTime_all) / 1000;
     console.log(`Time taken for all documents: ${fullTime.toFixed(2)} seconds`);
-    const threshold = 0;
-    const thresholdFieldTypes: string[] = [];
 
+    // Writing to CSV file
+    const csvOutput = fs.createWriteStream('output.csv');
+    csvOutput.write('Field,Data Type,Document Count\n');
     for (const [fieldType, count] of Object.entries(fieldTypeCounts)) {
-        const percentage = count / totalDocuments;
-        if (percentage >= threshold) {
-            thresholdFieldTypes.push(fieldType);
-        }
-    }
-
-    console.log('Field-type pairs and their document counts:');
-    for (const [fieldType, count] of Object.entries(fieldTypeCounts)) {
-        console.log(`${fieldType}: ${count} documents`);
+        const [field, dataType] = fieldType.split(':');
+        csvOutput.write(`${field},${dataType},${count}\n`);
     }
 
     await client.close();
 }
 
+async function processBatch(collection: any, batchDocs: any[], fieldTypeCounts: Record<string, number>) {
+    const cursor = collection.find({ _id: { $in: batchDocs } }).project({ _id: 0 });
+    const batchDocsArray = await cursor.toArray();
+
+    for (const doc of batchDocsArray) {
+        const flattenedDoc = flattenDocument(doc);
+        for (const [field, fieldType] of Object.entries(flattenedDoc)) {
+            const fieldTypePair = `${field}:${fieldType}`;
+            if (fieldTypeCounts[fieldTypePair]) {
+                fieldTypeCounts[fieldTypePair] += 1;
+            } else {
+                fieldTypeCounts[fieldTypePair] = 1;
+            }
+        }
+    }
+}
+
 const dbName = 'sample_mflix';
-const collectionName = 'movies';
+const collectionName = 'testing_schema';
 
 processDocuments(dbName, collectionName).catch(error => console.error(error));

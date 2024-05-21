@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var mongodb_1 = require("mongodb");
+var fs = require("fs");
 function createIndexIfNotExists(collection) {
     return __awaiter(this, void 0, void 0, function () {
         var error_1;
@@ -69,6 +70,7 @@ function flattenDocument(doc, parentKey, sep) {
                 items[newKey] = 'array';
             }
             else {
+                items[newKey] = 'object'; // include the parent object itself
                 Object.assign(items, flattenDocument(value, newKey, sep));
             }
         }
@@ -80,36 +82,89 @@ function flattenDocument(doc, parentKey, sep) {
 }
 function processDocuments(dbName, collectionName) {
     return __awaiter(this, void 0, void 0, function () {
-        var client, db, collection, totalDocuments, batchSize, fieldTypeCounts, startTime_all, i, startTime, cursor, batchDocs, _i, batchDocs_1, doc, flattenedDoc, _a, _b, _c, field, fieldType, fieldTypePair, endTime, iterationTime, endTime_all, fullTime, threshold, thresholdFieldTypes, _d, _e, _f, fieldType, count, percentage, _g, _h, _j, fieldType, count;
-        return __generator(this, function (_k) {
-            switch (_k.label) {
+        var client, db, collection, totalDocuments, fieldTypeCounts, startTime_all, allDocs, docsWithTimestamp, batchStartTime, batchDocs, _i, docsWithTimestamp_1, docWithTimestamp, docCreationTime, intervalWindow, endTime_all, fullTime, csvOutput, _a, _b, _c, fieldType, count, _d, field, dataType;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0:
                     client = new mongodb_1.MongoClient('mongodb+srv://admin:awesome@cluster0.kzdrfb1.mongodb.net/');
                     return [4 /*yield*/, client.connect()];
                 case 1:
-                    _k.sent();
+                    _e.sent();
                     db = client.db(dbName);
                     collection = db.collection(collectionName);
                     return [4 /*yield*/, createIndexIfNotExists(collection)];
                 case 2:
-                    _k.sent();
+                    _e.sent();
                     return [4 /*yield*/, collection.countDocuments()];
                 case 3:
-                    totalDocuments = _k.sent();
-                    batchSize = 1000;
+                    totalDocuments = _e.sent();
                     fieldTypeCounts = {};
                     startTime_all = Date.now();
-                    i = 0;
-                    _k.label = 4;
+                    return [4 /*yield*/, collection.find({}).project({ _id: 1 }).toArray()];
                 case 4:
-                    if (!(i < totalDocuments)) return [3 /*break*/, 7];
-                    startTime = Date.now();
-                    cursor = collection.find({}).skip(i).limit(batchSize).project({ _id: 0 });
-                    return [4 /*yield*/, cursor.toArray()];
+                    allDocs = _e.sent();
+                    docsWithTimestamp = allDocs.map(function (doc) { return ({
+                        _id: doc._id,
+                        timestamp: doc._id.getTimestamp(),
+                    }); }).sort(function (a, b) { return a.timestamp - b.timestamp; });
+                    batchStartTime = docsWithTimestamp[0].timestamp;
+                    batchDocs = [];
+                    _i = 0, docsWithTimestamp_1 = docsWithTimestamp;
+                    _e.label = 5;
                 case 5:
-                    batchDocs = _k.sent();
-                    for (_i = 0, batchDocs_1 = batchDocs; _i < batchDocs_1.length; _i++) {
-                        doc = batchDocs_1[_i];
+                    if (!(_i < docsWithTimestamp_1.length)) return [3 /*break*/, 9];
+                    docWithTimestamp = docsWithTimestamp_1[_i];
+                    docCreationTime = docWithTimestamp.timestamp;
+                    intervalWindow = 25;
+                    if (!((docCreationTime - batchStartTime) / 1000 <= intervalWindow)) return [3 /*break*/, 6];
+                    batchDocs.push(docWithTimestamp._id);
+                    return [3 /*break*/, 8];
+                case 6: return [4 /*yield*/, processBatch(collection, batchDocs, fieldTypeCounts)];
+                case 7:
+                    _e.sent();
+                    batchStartTime = docCreationTime;
+                    batchDocs = [docWithTimestamp._id];
+                    _e.label = 8;
+                case 8:
+                    _i++;
+                    return [3 /*break*/, 5];
+                case 9:
+                    if (!(batchDocs.length > 0)) return [3 /*break*/, 11];
+                    return [4 /*yield*/, processBatch(collection, batchDocs, fieldTypeCounts)];
+                case 10:
+                    _e.sent();
+                    _e.label = 11;
+                case 11:
+                    endTime_all = Date.now();
+                    fullTime = (endTime_all - startTime_all) / 1000;
+                    console.log("Time taken for all documents: ".concat(fullTime.toFixed(2), " seconds"));
+                    csvOutput = fs.createWriteStream('output.csv');
+                    csvOutput.write('Field,Data Type,Document Count\n');
+                    for (_a = 0, _b = Object.entries(fieldTypeCounts); _a < _b.length; _a++) {
+                        _c = _b[_a], fieldType = _c[0], count = _c[1];
+                        _d = fieldType.split(':'), field = _d[0], dataType = _d[1];
+                        csvOutput.write("".concat(field, ",").concat(dataType, ",").concat(count, "\n"));
+                    }
+                    return [4 /*yield*/, client.close()];
+                case 12:
+                    _e.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+function processBatch(collection, batchDocs, fieldTypeCounts) {
+    return __awaiter(this, void 0, void 0, function () {
+        var cursor, batchDocsArray, _i, batchDocsArray_1, doc, flattenedDoc, _a, _b, _c, field, fieldType, fieldTypePair;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0:
+                    cursor = collection.find({ _id: { $in: batchDocs } }).project({ _id: 0 });
+                    return [4 /*yield*/, cursor.toArray()];
+                case 1:
+                    batchDocsArray = _d.sent();
+                    for (_i = 0, batchDocsArray_1 = batchDocsArray; _i < batchDocsArray_1.length; _i++) {
+                        doc = batchDocsArray_1[_i];
                         flattenedDoc = flattenDocument(doc);
                         for (_a = 0, _b = Object.entries(flattenedDoc); _a < _b.length; _a++) {
                             _c = _b[_a], field = _c[0], fieldType = _c[1];
@@ -122,39 +177,11 @@ function processDocuments(dbName, collectionName) {
                             }
                         }
                     }
-                    endTime = Date.now();
-                    iterationTime = (endTime - startTime) / 1000;
-                    console.log("Time taken for batch starting at ".concat(i, ": ").concat(iterationTime.toFixed(2), " seconds"));
-                    _k.label = 6;
-                case 6:
-                    i += batchSize;
-                    return [3 /*break*/, 4];
-                case 7:
-                    endTime_all = Date.now();
-                    fullTime = (endTime_all - startTime_all) / 1000;
-                    console.log("Time taken for all documents: ".concat(fullTime.toFixed(2), " seconds"));
-                    threshold = 0;
-                    thresholdFieldTypes = [];
-                    for (_d = 0, _e = Object.entries(fieldTypeCounts); _d < _e.length; _d++) {
-                        _f = _e[_d], fieldType = _f[0], count = _f[1];
-                        percentage = count / totalDocuments;
-                        if (percentage >= threshold) {
-                            thresholdFieldTypes.push(fieldType);
-                        }
-                    }
-                    console.log('Field-type pairs and their document counts:');
-                    for (_g = 0, _h = Object.entries(fieldTypeCounts); _g < _h.length; _g++) {
-                        _j = _h[_g], fieldType = _j[0], count = _j[1];
-                        console.log("".concat(fieldType, ": ").concat(count, " documents"));
-                    }
-                    return [4 /*yield*/, client.close()];
-                case 8:
-                    _k.sent();
                     return [2 /*return*/];
             }
         });
     });
 }
 var dbName = 'sample_mflix';
-var collectionName = 'movies';
+var collectionName = 'testing_schema';
 processDocuments(dbName, collectionName).catch(function (error) { return console.error(error); });
