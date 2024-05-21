@@ -1,6 +1,7 @@
 import { MongoClient } from 'mongodb';
 import * as fs from 'fs';
 import { ObjectId } from 'mongodb';
+require('dotenv').config();
 
 async function createIndexIfNotExists(collection: any): Promise<void> {
     try {
@@ -28,8 +29,8 @@ function flattenDocument(doc: any, parentKey: string = '', sep: string = '.'): R
     return items;
 }
 
-async function processDocuments(dbName: string, collectionName: string) {
-    const client = new MongoClient('mongodb+srv://admin:awesome@cluster0.kzdrfb1.mongodb.net/');
+async function processDocuments(connectionString: string, dbName: string, collectionName: string) {
+    const client = new MongoClient(connectionString);
     await client.connect();
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
@@ -99,7 +100,11 @@ async function processDocuments(dbName: string, collectionName: string) {
     await client.close();
 }
 
+const connectionString = process.env.CONNECTION_STRING ;
+if (!connectionString) {
+    throw new Error('Missing CONNECTION_STRING in environment variables');
+}
 const dbName = 'sample_training';
 const collectionName = 'routes';
 
-processDocuments(dbName, collectionName).catch(error => console.error(error));
+processDocuments(connectionString, dbName, collectionName).catch(error => console.error(error));

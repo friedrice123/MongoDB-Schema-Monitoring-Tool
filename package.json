@@ -12,7 +12,8 @@
   "dependencies": {
     "@types/mongodb": "^4.0.7",
     "@types/node": "^20.12.12",
-    "typescript": "^5.4.5",
-    "mongodb": "^6.6.2"
+    "dotenv": "^16.4.5",
+    "mongodb": "^6.6.2",
+    "typescript": "^5.4.5"
   }
 }
