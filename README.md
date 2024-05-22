@@ -4,4 +4,4 @@ Create a .env file to provide your connection string as the variable CONNECTION_
 \
 Run the following commands:-\
 npm run build\
-npm start databaseName collectionName\
+npm start databaseName collectionName
