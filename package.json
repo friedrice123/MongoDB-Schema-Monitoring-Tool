@@ -11,11 +11,11 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "lint": "tsc"
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Saugat Kannojia",
   "license": "ISC",
   "dependencies": {
     "@types/mongodb": "^4.0.7",
