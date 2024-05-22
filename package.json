@@ -22,9 +22,11 @@
     "@types/node": "^20.12.12",
     "dotenv": "^16.4.5",
     "mongodb": "^6.6.2",
+    "papaparse": "^5.4.1",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
+    "@types/papaparse": "^5.3.14",
     "tsup": "^8.0.2"
   }
 }

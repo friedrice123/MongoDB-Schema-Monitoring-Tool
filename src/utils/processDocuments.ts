@@ -1,7 +1,7 @@
 import { MongoHelper } from './mongoHelper';
 import { flattenDocument } from './flattenDocument';
 import { ObjectId } from 'mongodb';
-import { writeFieldCountsToCSV } from './csvWriter';
+import { CSVHelper } from './csvUtils';
 
 export async function processDocuments(connectionString: string, dbName: string, collectionName: string) {
     const mongoHelper = new MongoHelper(connectionString);
@@ -52,7 +52,12 @@ export async function processDocuments(connectionString: string, dbName: string,
     const fullTime = (endTime_all - startTime_all) / 1000;
     console.log(`Time taken for all documents: ${fullTime.toFixed(2)} seconds`);
 
-    writeFieldCountsToCSV('output.csv', fieldTypeCounts);
+    const currentDate = new Date();
+    const formattedDate = currentDate.toISOString().replace(/[:.]/g, '-');
+    const fileName = `dump/${collectionName}-${formattedDate}.csv`;
+
+    const csvHelper = new CSVHelper(fileName);
+    csvHelper.writeFieldCountsToCSV(fieldTypeCounts);
 
     await mongoHelper.close();
 }
