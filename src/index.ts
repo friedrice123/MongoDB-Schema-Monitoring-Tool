@@ -1,44 +1,15 @@
-import { MongoClient } from 'mongodb';
-import * as fs from 'fs';
+import { MongoHelper } from './utils/mongoHelper';
+import { flattenDocument } from './utils/flattenDocument';
 import { ObjectId } from 'mongodb';
-const dotenv = require('dotenv')
-dotenv.config();
-
-async function createIndexIfNotExists(collection: any): Promise<void> {
-    try {
-        await collection.createIndex({ _id: 1 });
-    } catch (error) {
-        console.error('Index creation failed:', error);
-    }
-}
-
-function flattenDocument(doc: any, parentKey: string = '', sep: string = '.'): Record<string, string> {
-    const items: Record<string, string> = {};
-    for (const [key, value] of Object.entries(doc)) {
-        const newKey = parentKey ? `${parentKey}${sep}${key}` : key;
-        if (value && typeof value === 'object' && value !== null) {
-            if (Array.isArray(value)) {
-                items[newKey] = 'array';
-            } else {
-                items[newKey] = 'object'; // include the parent object itself
-                Object.assign(items, flattenDocument(value, newKey, sep));
-            }
-        } else {
-            items[newKey] = typeof value;
-        }
-    }
-    return items;
-}
+import { writeFieldCountsToCSV } from './utils/csvWriter';
+require('dotenv').config();
 
 async function processDocuments(connectionString: string, dbName: string, collectionName: string) {
-    const client = new MongoClient(connectionString);
-    await client.connect();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
+    const mongoHelper = new MongoHelper(connectionString);
+    await mongoHelper.connect();
+    const collection = mongoHelper.getCollection(dbName, collectionName);
 
-    await createIndexIfNotExists(collection);
-
-    const totalDocuments = await collection.countDocuments();
+    await mongoHelper.createIndexIfNotExists(collection);
     const fieldTypeCounts: Record<string, number> = {};
     const startTime_all = Date.now();
 
@@ -48,25 +19,18 @@ async function processDocuments(connectionString: string, dbName: string, collec
     while (true) {
         const endTimestamp = new Date(startTimestamp.getTime() + intervalWindow);
 
-        const batchDocs = await collection
-            .find({ _id: { $gt: ObjectId.createFromTime(startTimestamp.getTime() / 1000), $lt: ObjectId.createFromTime(endTimestamp.getTime() / 1000) } })
-            .project({ _id: 0 })
-            .toArray();
+        const batchDocs = await mongoHelper.findDocuments(
+            collection,
+            { _id: { $gt: ObjectId.createFromTime(startTimestamp.getTime() / 1000), $lt: ObjectId.createFromTime(endTimestamp.getTime() / 1000) } },
+            { _id: 0 }
+        );
 
         if (batchDocs.length === 0) {
-            // Find the next document after the current endTimestamp
-            const nextDoc = await collection
-                .find({ _id: { $gt: ObjectId.createFromTime(endTimestamp.getTime() / 1000) } })
-                .sort({ _id: 1 })
-                .limit(1)
-                .toArray();
-
+            const nextDoc = await mongoHelper.findNextDocument(collection, endTimestamp);
             if (nextDoc.length === 0) {
                 break; // No more documents to process
             }
-
-            // Update startTimestamp to the next document's timestamp
-            startTimestamp = nextDoc[0]?._id?.getTimestamp() || new Date();
+            startTimestamp = nextDoc[0]._id.getTimestamp();
             continue; // Skip processing and continue with the new timestamp
         }
 
@@ -82,7 +46,6 @@ async function processDocuments(connectionString: string, dbName: string, collec
             }
         }
 
-        // Update startTimestamp to the endTimestamp for the next batch
         startTimestamp = endTimestamp;
     }
 
@@ -90,18 +53,12 @@ async function processDocuments(connectionString: string, dbName: string, collec
     const fullTime = (endTime_all - startTime_all) / 1000;
     console.log(`Time taken for all documents: ${fullTime.toFixed(2)} seconds`);
 
-    // Writing to CSV file
-    const csvOutput = fs.createWriteStream('output.csv');
-    csvOutput.write('Field,Data Type,Document Count\n');
-    for (const [fieldType, count] of Object.entries(fieldTypeCounts)) {
-        const [field, dataType] = fieldType.split(':');
-        csvOutput.write(`${field},${dataType},${count}\n`);
-    }
+    writeFieldCountsToCSV('output.csv', fieldTypeCounts);
 
-    await client.close();
+    await mongoHelper.close();
 }
 
-const connectionString = process.env.CONNECTION_STRING ;
+const connectionString = process.env.CONNECTION_STRING;
 if (!connectionString) {
     throw new Error('Missing CONNECTION_STRING in environment variables');
 }
