@@ -1,14 +1,15 @@
-import { MongoHelper } from './mongoHelper';
+import { mongoClient, MongoHelper } from './mongoHelper';
 import { flattenDocument } from './flattenDocument';
 import { ObjectId } from 'mongodb';
 import { CSVHelper } from './csvUtils';
+import { generateFieldTypeJson, generateTypeScriptInterfaces, saveTypeScriptInterfacesToFile } from './generateClassDefinition';
+import fs from 'fs';
 
 export async function processDocuments(connectionString: string, dbName: string, collectionName: string) {
     const mongoHelper = new MongoHelper(connectionString);
-    await mongoHelper.connect();
+
     const collection = mongoHelper.getCollection(dbName, collectionName);
 
-    await mongoHelper.createIndexIfNotExists(collection);
     const fieldTypeCounts: Record<string, number> = {};
     const startTime_all = Date.now();
 
@@ -54,10 +55,17 @@ export async function processDocuments(connectionString: string, dbName: string,
 
     const currentDate = new Date();
     const formattedDate = currentDate.toISOString().replace(/[:.]/g, '-');
-    const fileName = `dump/${collectionName}-${formattedDate}.csv`;
+    const csvFileName = `dump/${collectionName}-${formattedDate}.csv`;
 
-    const csvHelper = new CSVHelper(fileName);
+    const csvHelper = new CSVHelper(csvFileName);
     csvHelper.writeFieldCountsToCSV(fieldTypeCounts);
 
-    await mongoHelper.close();
+    const fieldTypeJson = generateFieldTypeJson(fieldTypeCounts);
+    const jsonFileName = `dump/${collectionName}.json`;
+
+    const classContent = generateTypeScriptInterfaces(fieldTypeJson, collectionName);
+    saveTypeScriptInterfacesToFile(collectionName, classContent, 'dump');
+
+    fs.writeFileSync(jsonFileName, JSON.stringify(fieldTypeJson, null, 2));
+    console.log(`Field-type JSON saved to ${jsonFileName}`);
 }
