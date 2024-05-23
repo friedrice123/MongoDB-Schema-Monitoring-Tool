@@ -18,8 +18,7 @@ export function generateFieldTypeJson(fieldTypeCounts: Record<string, number>): 
                                 currentLevel[part] = `${currentLevel[part]} | ${type}`;
                             } else if (typeof currentLevel[part] === 'object' && currentLevel[part]._type) {
                                 currentLevel[part] = {
-                                    _type: currentLevel[part]._type,
-                                    [type]: true
+                                    _type: currentLevel[part]._type
                                 };
                             }
                         } else {
@@ -48,10 +47,14 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
         let interfaceContent = `interface ${currentInterfaceName} {\n`;
 
         for (const [key, value] of Object.entries(obj)) {
+            if (key === '_type') {
+                continue;
+            }
             if (typeof value === 'string') {
                 interfaceContent += `  ${key}: ${mapType(value)};\n`;
             } else if (typeof value === 'object') {
-                interfaceContent += `  ${key}: {\n${parseNestedObject(value)}  };\n`;
+                const typeAnnotation = value._type ? `${mapType(removeObjectType(value._type))} ` : '';
+                interfaceContent += `  ${key}: ${typeAnnotation}{\n${parseNestedObject(value)}  };\n`;
             }
         }
 
@@ -63,10 +66,14 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
         let nestedContent = '';
 
         for (const [key, value] of Object.entries(obj)) {
+            if (key === '_type') {
+                continue;
+            }
             if (typeof value === 'string') {
                 nestedContent += `    ${key}: ${mapType(value)};\n`;
             } else if (typeof value === 'object') {
-                nestedContent += `    ${key}: {\n${parseNestedObject(value)}    };\n`;
+                const typeAnnotation = value._type ? `${mapType(removeObjectType(value._type))}` : '';
+                nestedContent += `    ${key}: ${typeAnnotation}{\n${parseNestedObject(value)}    };\n`;
             }
         }
 
@@ -75,7 +82,6 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
 
     function mapType(type: string | Record<string, any>): string {
         if (typeof type === 'string') {
-            if (type === 'array') return 'any[]';
             return type.includes('|') ? `${type}` : type;
         } else {
             const nestedTypes: string[] = [];
@@ -89,6 +95,14 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
             }
             return nestedTypes.join(' | ');
         }
+    }
+
+    function removeObjectType(type: string): string {
+        const objectType = type.split(' | ').filter(t => t !== 'object').join(' | ') + ' | ';
+        if(objectType === ' | '){
+            return '';
+        }
+        return objectType;
     }
 
     interfaceDefinitions += parseObject(json, interfaceName);

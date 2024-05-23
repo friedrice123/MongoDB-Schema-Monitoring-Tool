@@ -4,7 +4,12 @@ export function flattenDocument(doc: any, parentKey: string = '', sep: string = 
         const newKey = parentKey ? `${parentKey}${sep}${key}` : key;
         if (value && typeof value === 'object' && value !== null) {
             if (Array.isArray(value)) {
-                items[newKey] = 'array';
+                if (value.length > 0) {
+                    const firstElemType = typeof value[0];
+                    items[newKey] = `${firstElemType}[]`;
+                } else {
+                    items[newKey] = 'any[]'; // Empty arrays default to any[]
+                }
             } else {
                 items[newKey] = 'object'; // include the parent object itself
                 Object.assign(items, flattenDocument(value, newKey, sep));
