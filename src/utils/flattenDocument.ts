@@ -8,10 +8,10 @@ export function flattenDocument(doc: any, parentKey: string = '', sep: string = 
                     const firstElemType = typeof value[0];
                     items[newKey] = `${firstElemType}[]`;
                 } else {
-                    items[newKey] = 'any[]'; // Empty arrays default to any[]
+                    items[newKey] = 'any[]';
                 }
             } else {
-                items[newKey] = 'object'; // include the parent object itself
+                items[newKey] = 'object';
                 Object.assign(items, flattenDocument(value, newKey, sep));
             }
         } else {

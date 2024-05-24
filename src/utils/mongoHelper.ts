@@ -1,4 +1,3 @@
-// MongoHelper.ts
 import { MongoClient, ObjectId, Collection } from 'mongodb';
 
 export let mongoClient : any;
