@@ -1,15 +1,16 @@
-export function generateFieldTypeJson(fieldTypeCounts: Record<string, number>): Record<string, any> {
+export async function generateFieldTypeJson(fieldTypeCounts: Record<string, number>): Promise<Record<string, any>> {
     const fieldTypeJson: Record<string, any> = {};
-
+    // Loop through each field type pair and generate the JSON structure
     for (const fieldTypePair of Object.keys(fieldTypeCounts)) {
         const [field, type] = fieldTypePair.split(':');
         if (field && type) {
             const fieldParts = field.split('.');
             let currentLevel = fieldTypeJson;
-
+            // Traverse the JSON structure and create the necessary objects
             for (let i = 0; i < fieldParts.length; i++) {
                 const part = fieldParts[i];
                 if (part) {
+                    // If it's the last part of the field, add the data type
                     if (i === fieldParts.length - 1) {
                         if (currentLevel[part]) {
                             if (typeof currentLevel[part] === 'string') {
@@ -22,7 +23,9 @@ export function generateFieldTypeJson(fieldTypeCounts: Record<string, number>): 
                         } else {
                             currentLevel[part] = type;
                         }
-                    } else {
+                    }
+                    // If the part doesn't exist, create an object 
+                    else {
                         if (!currentLevel[part]) {
                             currentLevel[part] = {};
                         } else if (typeof currentLevel[part] === 'string') {

@@ -1,8 +1,8 @@
 import fs from 'fs';
 
-export function generateTypeScriptInterfaces(json: Record<string, any>, interfaceName: string): string {
+export async function generateTypeScriptInterfaces(json: Record<string, any>, interfaceName: string): Promise<string> {
     let interfaceDefinitions = '';
-
+    // Parse the JSON object and generate TypeScript interfaces
     function parseObject(obj: Record<string, any>, currentInterfaceName: string): string {
         let interfaceContent = `interface ${currentInterfaceName} {\n`;
 
@@ -21,7 +21,7 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
         interfaceContent += '}\n\n';
         return interfaceContent;
     }
-
+    // Parse nested objects
     function parseNestedObject(obj: Record<string, any>): string {
         let nestedContent = '';
 
@@ -39,7 +39,7 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
 
         return nestedContent;
     }
-
+    // Map the data types to TypeScript types and handle union types
     function mapType(type: string | Record<string, any>): string {
         if (typeof type === 'string') {
             return type.includes('|') ? `${type}` : type;
@@ -56,7 +56,7 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
             return nestedTypes.join(' | ');
         }
     }
-
+    // Remove the 'object' type from the union types, instead output the whole object
     function removeObjectType(type: string): string {
         const objectType = type.split(' | ').filter(t => t !== 'object').join(' | ') + ' | ';
         if(objectType === ' | '){
@@ -68,7 +68,7 @@ export function generateTypeScriptInterfaces(json: Record<string, any>, interfac
     interfaceDefinitions += parseObject(json, interfaceName);
     return interfaceDefinitions;
 }
-
+// Save the TypeScript interfaces to a file
 export function saveTypeScriptInterfacesToFile(interfaceName: string, interfaceContent: string, outputPath: string) {
     const filePath = `${outputPath}/${interfaceName}.ts`;
     fs.writeFileSync(filePath, interfaceContent);

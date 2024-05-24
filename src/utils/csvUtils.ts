@@ -7,8 +7,8 @@ export class CSVHelper {
     constructor(filePath: string) {
         this.filePath = filePath;
     }
-
-    writeFieldCountsToCSV(fieldTypeCounts: Record<string, number>): void {
+    // Write the field counts to a CSV file
+    async writeFieldCountsToCSV(fieldTypeCounts: Record<string, number>){
         const data = [['Field', 'Data Type', 'Document Count']];
         for (const [fieldType, count] of Object.entries(fieldTypeCounts)) {
             const [field, dataType] = fieldType.split(':');
@@ -18,8 +18,8 @@ export class CSVHelper {
         const csv = Papa.unparse(data);
         fs.writeFileSync(this.filePath, csv, 'utf8');
     }
-
-    readCSV(): Record<string, number>[] {
+    // Read the CSV file
+    async readCSV(): Promise<Record<string, number>[]> {
         const fileContent = fs.readFileSync(this.filePath, 'utf8');
         const result = Papa.parse<Record<string, number>>(fileContent, {
             header: true,

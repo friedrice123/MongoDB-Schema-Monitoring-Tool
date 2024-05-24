@@ -24,7 +24,8 @@
     "dotenv": "^16.4.5",
     "mongodb": "^6.6.2",
     "papaparse": "^5.4.1",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "why-is-node-running": "^2.2.2"
   },
   "devDependencies": {
     "@types/papaparse": "^5.3.14",
