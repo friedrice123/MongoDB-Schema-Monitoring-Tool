@@ -6,11 +6,15 @@ export async function generateTypeScriptInterfaces(json: Record<string, any>, in
     function parseObject(obj: Record<string, any>, currentInterfaceName: string): string {
         let interfaceContent = `interface ${currentInterfaceName} {\n`;
 
-        for (const [key, value] of Object.entries(obj)) {
+        for (let [key, value] of Object.entries(obj)) {
             if (key === '_type') {
                 continue;
             }
             if (typeof value === 'string') {
+                if(value[value.length - 1] == ']' && value[value.length - 2] == '[' && value[value.length - 3] == '}'){
+                    const newvalue = value.slice(0, value.length - 2);
+                    value = JsonToTS(newvalue);
+                }
                 interfaceContent += `  ${key}: ${mapType(value)};\n`;
             } else if (typeof value === 'object') {
                 const typeAnnotation = value._type ? `${mapType(removeObjectType(value._type))} ` : '';
@@ -63,6 +67,19 @@ export async function generateTypeScriptInterfaces(json: Record<string, any>, in
             return '';
         }
         return objectType;
+    }
+
+    function JsonToTS(json: string): string {
+        let ts = '';
+        let obj = JSON.parse(json);
+        for (let key in obj) {
+            if (typeof obj[key] === 'object') {
+                ts += `${key}: ${JsonToTS(JSON.stringify(obj[key]))};`;
+            } else {
+                ts += `${key}: ${typeof obj[key]};`;
+            }
+        }
+        return `{${ts}}[]`;
     }
 
     interfaceDefinitions += parseObject(json, interfaceName);
