@@ -11,7 +11,14 @@ export class CSVHelper {
     async writeFieldCountsToCSV(fieldTypeCounts: Record<string, number>){
         const data = [['Field', 'Data Type', 'Document Count']];
         for (const [fieldType, count] of Object.entries(fieldTypeCounts)) {
-            const [field, dataType] = fieldType.split(':');
+            let [field, dataType] = fieldType.split(':');
+            if(dataType != undefined && dataType[0] === '{'){
+                let i = 0;
+                while(i < fieldType.length && fieldType[i] !== '{'){
+                    i++;
+                }
+                dataType = fieldType.slice(i);
+            }
             data.push([field!, dataType!, count.toString()]);
         }
 
