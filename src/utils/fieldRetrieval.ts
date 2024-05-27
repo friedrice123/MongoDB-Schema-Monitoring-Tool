@@ -12,7 +12,7 @@ function typeIdentifier(val: any): string {
         } else {
             // For objects, recursively determine the types of their properties
             const fields = Object.entries(val).map(([key, value]) => {
-                return `"${key}": ${typeIdentifier(value)}`;
+                return `"${key}": "${typeIdentifier(value)}"`;
             });
             fieldType = `{${fields.join(', ')}}`;
         }
@@ -22,7 +22,7 @@ function typeIdentifier(val: any): string {
     return fieldType;
 }
 
-export function fieldRetrieval(fieldName: string, value: string, doc: Record<string, any>, docsWithField: Record<string, Record<string, string>[]>) {
+export function documentLevelSchema(fieldName: string, value: string, doc: Record<string, any>, docsWithField: Record<string, Record<string, string>[]>) {
     // Initialize the entry for the value if it does not exist
     if (!docsWithField[value]) {
         docsWithField[value] = [];

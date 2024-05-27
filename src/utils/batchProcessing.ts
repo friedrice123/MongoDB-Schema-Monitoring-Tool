@@ -1,5 +1,5 @@
 import { fieldName } from "../config";
-import { fieldRetrieval } from "./fieldRetrieval";
+import { documentLevelSchema } from "./fieldRetrieval";
 import { flattenDocument } from "./flattenDocument";
 
 export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<string, number>, docsWithField: Record<string, Record<string, string>[]>){
@@ -19,7 +19,7 @@ export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<
             if(fieldName === field){
                 const value = doc[fieldName];
                 if (typeof value === 'string') {
-                    fieldRetrieval(fieldName, value, doc, docsWithField);
+                    documentLevelSchema(fieldName, value, doc, docsWithField);
                 }
             }
         }

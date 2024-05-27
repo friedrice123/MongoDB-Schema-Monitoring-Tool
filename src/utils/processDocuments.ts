@@ -37,7 +37,6 @@ export async function processDocuments(connectionString: string, dbName: string,
         const jsonFileName = `dump/${collectionName}_${fieldName}.json`;
         fs.writeFileSync(jsonFileName, JSON.stringify(docsWithField, null, 2));
     }
-    console.log(docsWithField);
     const endTime_all = Date.now();
     const fullTime = (endTime_all - startTime_all) / 1000;
     console.log(`Time taken for all documents: ${fullTime.toFixed(2)} seconds`);
