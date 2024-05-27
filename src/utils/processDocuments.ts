@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { CSVHelper } from './csvUtils';
 import { generateTypeScriptInterfaces, saveTypeScriptInterfacesToFile } from './generateInterfaceDefinition';
 import { generateFieldTypeJson } from './generateJSON';
-import { intervalWindow } from '../config';
+import { fieldName, intervalWindow } from '../config';
 import fs from 'fs';
 import { batchProcessing } from './batchProcessing';
 
@@ -12,6 +12,7 @@ export async function processDocuments(connectionString: string, dbName: string,
     const collection  = await mongoHelper.getCollection(dbName, collectionName);
     // Find information about the whole collection scanning documents in batches made according to their creation timestamp intervals
     const fieldTypeCounts: Record<string, number> = {};
+    const docsWithField: Record<string, Record<string, string>[]> = {};
     const startTime_all = Date.now();
     let startTimestamp = new Date(0);  // Start from the epoch time
     while (true) {
@@ -29,9 +30,14 @@ export async function processDocuments(connectionString: string, dbName: string,
             continue;
         }
         // Collect information about the fields, their types and number of documents they appear in
-        await batchProcessing(batchDocs, fieldTypeCounts);
+        await batchProcessing(batchDocs, fieldTypeCounts, docsWithField);
         startTimestamp = endTimestamp;
     }
+    if(docsWithField){
+        const jsonFileName = `dump/${collectionName}_${fieldName}.json`;
+        fs.writeFileSync(jsonFileName, JSON.stringify(docsWithField, null, 2));
+    }
+    console.log(docsWithField);
     const endTime_all = Date.now();
     const fullTime = (endTime_all - startTime_all) / 1000;
     console.log(`Time taken for all documents: ${fullTime.toFixed(2)} seconds`);
