@@ -1,5 +1,5 @@
-import { fieldName } from "../config";
-import { documentLevelSchema } from "./fieldRetrieval";
+import { fieldName } from "../index";
+import { documentLevelSchema } from "./documentLevelRetrieval";
 import { flattenDocument } from "./flattenDocument";
 
 export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<string, number>, docsWithField: Record<string, Record<string, string>[]>){
