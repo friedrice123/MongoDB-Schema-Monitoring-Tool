@@ -1,4 +1,4 @@
-import { processDocuments } from './utils/processDocuments';
+import { processDocuments } from './services/processDocuments';
 import { MongoHelper } from './utils/mongoHelper';
 import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
@@ -7,8 +7,8 @@ import { connectionString } from './config';
 
 const app: Express = express();
 const port = 8000;
-export let intervalWindow : number = 25*1000;  // Interval window in milliseconds
-export let fieldName : string | undefined; // Field name collected from the 3rd argument
+export let intervalWindow: number = 25 * 1000;  // Interval window in milliseconds
+export let fieldName: string | undefined; // Field name collected from the 3rd argument
 
 MongoHelper.createDbConnection(connectionString);
 app.use(bodyParser.json());

@@ -1,16 +1,16 @@
-import { MongoHelper } from './mongoHelper';
+import { MongoHelper } from '../utils/mongoHelper';
 import { ObjectId } from 'mongodb';
-import { CSVHelper } from './csvUtils';
-import { generateTypeScriptInterfaces, saveTypeScriptInterfacesToFile } from './generateInterfaceDefinition';
-import { generateFieldTypeJson } from './generateJSON';
+import { CSVHelper } from '../utils/csvUtils';
+import { generateTypeScriptInterfaces, saveTypeScriptInterfacesToFile } from '../utils/generateInterfaceDefinition';
+import { generateFieldTypeJson } from '../utils/generateJSON';
 import { fieldName, intervalWindow } from '../index';
 import fs from 'fs';
-import { batchProcessing } from './batchProcessing';
-import {createZipFile} from './zipCreator';
+import { batchProcessing } from '../utils/batchProcessing';
+import { createZipFile } from './zipCreator';
 
 export async function processDocuments(connectionString: string, dbName: string, collectionName: string, uniqueID: string) {
     const mongoHelper = new MongoHelper(connectionString);
-    const collection  = await mongoHelper.getCollection(dbName, collectionName);
+    const collection = await mongoHelper.getCollection(dbName, collectionName);
     // Find information about the whole collection scanning documents in batches made according to their creation timestamp intervals
     const fieldTypeCounts: Record<string, number> = {};
     const docsWithField: Record<string, Record<string, string>[]> = {};
@@ -37,7 +37,7 @@ export async function processDocuments(connectionString: string, dbName: string,
     if (!fs.existsSync(`dump/${uniqueID}`)) {
         fs.mkdirSync(`dump/${uniqueID}`);
     }
-    if(fieldName){
+    if (fieldName) {
         const jsonFileName = `dump/${uniqueID}/${collectionName}_${fieldName}.json`;
         fs.writeFileSync(jsonFileName, JSON.stringify(docsWithField, null, 2));
     }
@@ -55,7 +55,7 @@ export async function processDocuments(connectionString: string, dbName: string,
     console.log(`Field-type JSON saved to ${jsonFileName}`);
     // Generate TypeScript interfaces based on the information about the fields and their types
     const classContent = await generateTypeScriptInterfaces(fieldTypeJson, collectionName);
-    saveTypeScriptInterfacesToFile(collectionName, classContent, `dump/${uniqueID}`); 
-    
+    saveTypeScriptInterfacesToFile(collectionName, classContent, `dump/${uniqueID}`);
+
     await createZipFile(`dump/${uniqueID}`);
 }

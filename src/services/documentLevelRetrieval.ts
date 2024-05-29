@@ -1,4 +1,4 @@
-import { typeIdentifier } from "./typeIdentifier";
+import { typeIdentifier } from "../utils/typeIdentifier";
 
 export function documentLevelSchema(fieldName: string, value: string, doc: Record<string, any>, docsWithField: Record<string, Record<string, string>[]>) {
     // Initialize the entry for the value if it does not exist
