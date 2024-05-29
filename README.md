@@ -9,8 +9,8 @@ Example of a body to be passed as an information-\
     "dbName" : "sample_mflix",\
     "collectionName" : "movies",\
     "fieldName" : "type"\
-}\
-- You can use the GET request to check the status of the Schema Building process in the format:- http://localhost:8000/checkStatus/?id=<uniqueID>
+}
+- You can use the GET request to check the status of the Schema Building process in the format:- http://localhost:8000/checkStatus/?id=5a5a8d64-eccc-4a10-b6e3-6bd8238c4d88 
 - You can use the GET request to download the zip containing csv, json and ts file containing the interface for the schema:- http://localhost:8000/download/?id=5a5a8d64-eccc-4a10-b6e3-6bd8238c4d88 
 
 
