@@ -6,6 +6,7 @@ import { generateFieldTypeJson } from './generateJSON';
 import { fieldName, intervalWindow } from '../index';
 import fs from 'fs';
 import { batchProcessing } from './batchProcessing';
+import {createZipFile} from './zipCreator';
 
 export async function processDocuments(connectionString: string, dbName: string, collectionName: string, uniqueID: string) {
     const mongoHelper = new MongoHelper(connectionString);
@@ -54,5 +55,7 @@ export async function processDocuments(connectionString: string, dbName: string,
     console.log(`Field-type JSON saved to ${jsonFileName}`);
     // Generate TypeScript interfaces based on the information about the fields and their types
     const classContent = await generateTypeScriptInterfaces(fieldTypeJson, collectionName);
-    saveTypeScriptInterfacesToFile(collectionName, classContent, `dump/${uniqueID}`);    
+    saveTypeScriptInterfacesToFile(collectionName, classContent, `dump/${uniqueID}`); 
+    
+    await createZipFile(`dump/${uniqueID}`);
 }
