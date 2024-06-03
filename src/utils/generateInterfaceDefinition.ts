@@ -2,6 +2,8 @@ import fs from 'fs';
 
 export async function generateTypeScriptInterfaces(json: Record<string, any>, interfaceName: string): Promise<string> {
     let interfaceDefinitions = '';
+    const createdInterfaces: Record<string, string> = {};
+
     // Parse the JSON object and generate TypeScript interfaces
     function parseObject(obj: Record<string, any>, currentInterfaceName: string): string {
         let interfaceContent = `interface ${currentInterfaceName} {\n`;
@@ -11,62 +13,60 @@ export async function generateTypeScriptInterfaces(json: Record<string, any>, in
                 continue;
             }
             if (typeof value === 'string') {
-                if(value[value.length - 1] == ']' && value[value.length - 2] == '[' && value[value.length - 3] == '}'){
-                    const newvalue = value.slice(0, value.length - 2);
-                    value = JsonToTS(newvalue);
+                if (value.endsWith('[]')) {
+                    // Handle array types
+                    const arrayType = value.slice(0, -2);
+                    if(value[value.length - 1] == ']' && value[value.length - 2] == '[' && value[value.length - 3] == '}'){
+                        let newvalue = value.slice(0, value.length - 2);
+                        newvalue = JsonToTS(newvalue);
+                        interfaceContent += `  ${key}: ${mapType(newvalue, `${currentInterfaceName}${capitalizeFirstLetter(key)}`)};\n`;
+                    }
+                    else interfaceContent += `  ${key}: ${mapType(arrayType, `${currentInterfaceName}${capitalizeFirstLetter(key)}`)}[];\n`;
+                } else {
+                    interfaceContent += `  ${key}: ${mapType(value, `${currentInterfaceName}${capitalizeFirstLetter(key)}`)};\n`;
                 }
-                interfaceContent += `  ${key}: ${mapType(value)};\n`;
             } else if (typeof value === 'object') {
-                const typeAnnotation = value._type ? `${mapType(removeObjectType(value._type))} ` : '';
-                interfaceContent += `  ${key}: ${typeAnnotation}{\n${parseNestedObject(value)}  };\n`;
+                const nestedInterfaceName = `${currentInterfaceName}${capitalizeFirstLetter(key)}`;
+                let typeAnnotation = nestedInterfaceName;
+                if (value._type) {
+                    const types = value._type.split('|').map((t: string) => t.trim()).filter((t: string) => t !== 'object');
+                    typeAnnotation = types.length ? `${types.join(' | ')} | ${nestedInterfaceName}` : nestedInterfaceName;
+                }
+                createdInterfaces[nestedInterfaceName] = parseObject(value, nestedInterfaceName);
+                interfaceContent += `  ${key}: ${typeAnnotation};\n`;
             }
         }
 
         interfaceContent += '}\n\n';
         return interfaceContent;
     }
-    // Parse nested objects
-    function parseNestedObject(obj: Record<string, any>): string {
-        let nestedContent = '';
 
-        for (const [key, value] of Object.entries(obj)) {
-            if (key === '_type') {
-                continue;
-            }
-            if (typeof value === 'string') {
-                nestedContent += `    ${key}: ${mapType(value)};\n`;
-            } else if (typeof value === 'object') {
-                const typeAnnotation = value._type ? `${mapType(removeObjectType(value._type))}` : '';
-                nestedContent += `    ${key}: ${typeAnnotation}{\n${parseNestedObject(value)}    };\n`;
-            }
-        }
-
-        return nestedContent;
+    // Capitalize the first letter of a string
+    function capitalizeFirstLetter(string: string): string {
+        return string.charAt(0).toUpperCase() + string.slice(1);
     }
+
     // Map the data types to TypeScript types and handle union types
-    function mapType(type: string | Record<string, any>): string {
+    function mapType(type: string | Record<string, any>, interfaceName: string): string {
         if (typeof type === 'string') {
-            return type.includes('|') ? `${type}` : type;
+            if (type.includes('|')) {
+                return type.split('|').map(t => {
+                    t = t.trim();
+                    if (t === 'object') {
+                        const nestedInterfaceName = interfaceName;
+                        createdInterfaces[nestedInterfaceName] = parseObject({}, nestedInterfaceName);
+                        return nestedInterfaceName;
+                    }
+                    return t;
+                }).join(' | ');
+            } else {
+                return type;
+            }
         } else {
-            const nestedTypes: string[] = [];
-            if (type._type) {
-                nestedTypes.push(type._type);
-            }
-            for (const [nestedType, _] of Object.entries(type)) {
-                if (nestedType !== '_type') {
-                    nestedTypes.push(nestedType);
-                }
-            }
-            return nestedTypes.join(' | ');
+            const nestedInterfaceName = interfaceName;
+            createdInterfaces[nestedInterfaceName] = parseObject(type, nestedInterfaceName);
+            return nestedInterfaceName;
         }
-    }
-    // Remove the 'object' type from the union types, instead output the whole object
-    function removeObjectType(type: string): string {
-        const objectType = type.split(' | ').filter(t => t !== 'object').join(' | ') + ' | ';
-        if(objectType === ' | '){
-            return '';
-        }
-        return objectType;
     }
 
     function JsonToTS(json: string): string {
@@ -82,12 +82,19 @@ export async function generateTypeScriptInterfaces(json: Record<string, any>, in
         return `{${ts}}[]`;
     }
 
+    // Generate the main interface and any nested interfaces
     interfaceDefinitions += parseObject(json, interfaceName);
+    for (const [nestedInterfaceName, nestedInterfaceContent] of Object.entries(createdInterfaces)) {
+        interfaceDefinitions += nestedInterfaceContent;
+    }
+
     return interfaceDefinitions;
 }
+
 // Save the TypeScript interfaces to a file
 export function saveTypeScriptInterfacesToFile(interfaceName: string, interfaceContent: string, outputPath: string) {
     const filePath = `${outputPath}/${interfaceName}.ts`;
     fs.writeFileSync(filePath, interfaceContent);
     console.log(`TypeScript interfaces saved to ${filePath}`);
 }
+

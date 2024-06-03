@@ -54,7 +54,8 @@ export async function processDocuments(connectionString: string, dbName: string,
     fs.writeFileSync(jsonFileName, JSON.stringify(fieldTypeJson, null, 2));
     console.log(`Field-type JSON saved to ${jsonFileName}`);
     // Generate TypeScript interfaces based on the information about the fields and their types
-    const classContent = await generateTypeScriptInterfaces(fieldTypeJson, collectionName);
+    const interfaceName : string = collectionName.charAt(0).toUpperCase() + collectionName.slice(1);
+    const classContent = await generateTypeScriptInterfaces(fieldTypeJson, interfaceName);
     saveTypeScriptInterfacesToFile(collectionName, classContent, `dump/${uniqueID}`);
 
     await createZipFile(`dump/${uniqueID}`);
