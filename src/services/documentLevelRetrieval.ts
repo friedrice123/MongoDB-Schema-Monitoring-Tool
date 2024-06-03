@@ -7,7 +7,7 @@ export function documentLevelSchema(fieldName: string, value: string, doc: Recor
     }
 
     // Get the current entry for the value
-    const currentEntry = docsWithField[value];
+    const currentEntry : Record<string,string> = docsWithField[value] as Record<string, string>;
 
     // Iterate through the document to populate the fields and their types
     for (const [key, val] of Object.entries(doc)) {
