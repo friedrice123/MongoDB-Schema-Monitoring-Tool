@@ -2,7 +2,7 @@ import { fieldName } from "../index";
 import { documentLevelSchema } from "../services/documentLevelRetrieval";
 import { flattenDocument } from "./flattenDocument";
 
-export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<string, number>, docsWithField: Record<string, Record<string,string>>) {
+export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<string, number>, docsWithField: Record<string, any>) {
     // Loop through each document in the batch
     for (const doc of batchDocs) {
         // Lay down all the objects as a flat structure showing the fields inside the objects in a recursive fashion

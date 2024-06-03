@@ -1,5 +1,5 @@
 export function typeIdentifier(val: any): string {
-    let fieldType: string;
+    let fieldType;
 
     if (val && typeof val === 'object' && val !== null) {
         if (Array.isArray(val)) {
@@ -14,7 +14,7 @@ export function typeIdentifier(val: any): string {
             const fields = Object.entries(val).map(([key, value]) => {
                 return `"${key}": "${typeIdentifier(value)}"`;
             });
-            fieldType = `{${fields.join(', ')}}`;
+            fieldType = JSON.parse(`{${fields.join(', ')}}`);
         }
     } else {
         fieldType = typeof val;
