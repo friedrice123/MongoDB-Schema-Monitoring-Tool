@@ -57,6 +57,10 @@ export async function processDocuments(connectionString: string, dbName: string,
     const interfaceName : string = collectionName.charAt(0).toUpperCase() + collectionName.slice(1);
     const classContent = await generateTypeScriptInterfaces(fieldTypeJson, interfaceName);
     saveTypeScriptInterfacesToFile(collectionName, classContent, `dump/${uniqueID}`);
-
+    if(fieldName){
+        const interfaceName : string = collectionName.charAt(0).toUpperCase() + collectionName.slice(1) + '_' + fieldName;
+        const classContent = await generateTypeScriptInterfaces(docsWithField, interfaceName);
+        saveTypeScriptInterfacesToFile(collectionName + '_' + fieldName, classContent, `dump/${uniqueID}`);
+    }
     await createZipFile(`dump/${uniqueID}`);
 }
