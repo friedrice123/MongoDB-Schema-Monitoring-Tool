@@ -13,7 +13,7 @@ export async function processDocuments(connectionString: string, dbName: string,
     const collection = await mongoHelper.getCollection(dbName, collectionName);
     // Find information about the whole collection scanning documents in batches made according to their creation timestamp intervals
     const fieldTypeCounts: Record<string, number> = {};
-    const docsWithField: Record<string, Record<string, string>[]> = {};
+    const docsWithField: Record<string, any> = {};
     const startTime_all = Date.now();
     let startTimestamp = new Date(0);  // Start from the epoch time
     while (true) {
