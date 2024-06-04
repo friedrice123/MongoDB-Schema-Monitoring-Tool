@@ -1,4 +1,4 @@
-export async function flattenDocument(doc: any, parentKey: string = '', sep: string = '.'): Promise<Record<string, string>> {
+export async function flattenDocument(doc: any, parentKey: string = '', sep: string = '#'): Promise<Record<string, string>> {
     // Flatten the document
     const items: Record<string, string> = {};
     for (const [key, value] of Object.entries(doc)) {

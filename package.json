@@ -10,10 +10,8 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npx tsc",
-    "prestart": "npm run build",
-    "start": "node dist/index.js",
-    "preserve": "npm run build",
+    "build": "concurrently \"rimraf ./dist\" \"npx tsc\"",
+    "start": "npm run build",
     "serve": "concurrently \"npx tsc -w\" \"nodemon dist/index.js\""
   },
   "keywords": [],
@@ -33,6 +31,7 @@
     "mongodb": "^6.6.2",
     "nodemon": "^3.1.1",
     "papaparse": "^5.4.1",
+    "rimraf": "^5.0.7",
     "typescript": "^5.4.5",
     "uuid": "^9.0.1"
   },

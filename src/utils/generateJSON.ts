@@ -11,7 +11,7 @@ export async function generateFieldTypeJson(fieldTypeCounts: Record<string, numb
             type = fieldTypePair.slice(i);
         }
         if (field && type) {
-            const fieldParts = field.split('.');
+            const fieldParts = field.split('#');
             let currentLevel = fieldTypeJson;
             // Traverse the JSON structure and create the necessary objects
             for (let i = 0; i < fieldParts.length; i++) {
