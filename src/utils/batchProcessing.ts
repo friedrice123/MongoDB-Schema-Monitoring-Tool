@@ -10,7 +10,7 @@ export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<
 
         // Count the number of documents a field appears in and its data type
         for (const [field, fieldType] of Object.entries(flattenedDoc)) {
-            const fieldTypePair = `${field}:${fieldType}`;
+            const fieldTypePair = `${field};${fieldType}`;
             if (fieldTypeCounts[fieldTypePair]) {
                 fieldTypeCounts[fieldTypePair] += 1;
             } else {

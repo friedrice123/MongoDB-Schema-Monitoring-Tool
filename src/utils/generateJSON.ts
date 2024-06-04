@@ -2,7 +2,13 @@ export async function generateFieldTypeJson(fieldTypeCounts: Record<string, numb
     const fieldTypeJson: Record<string, any> = {};
     // Loop through each field type pair and generate the JSON structure
     for (const fieldTypePair of Object.keys(fieldTypeCounts)) {
-        let [field, type] = fieldTypePair.split(':');
+        let i = 0;
+        let field = '';
+        while(i < fieldTypePair.length && fieldTypePair[i] !== ';'){
+            field += fieldTypePair[i]
+            i++;
+        }
+        let type = fieldTypePair.slice(i+1);
         if(type != undefined && type[0] === '{'){
             let i = 0;
             while(i < fieldTypePair.length && fieldTypePair[i] !== '{'){
