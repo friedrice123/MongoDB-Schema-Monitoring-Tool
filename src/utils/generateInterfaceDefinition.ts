@@ -13,7 +13,6 @@ export async function generateTypeScriptInterfaces(json: Record<string, any>, in
                 continue;
             }
             if (typeof value === 'string') {
-                console.log(value)
                 const types = value.split('|').map((t: string) => t.trim());
                 for (let i = 0; i < types.length; i++) {
                     const t = types[i];

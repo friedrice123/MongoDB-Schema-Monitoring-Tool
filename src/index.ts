@@ -4,6 +4,7 @@ import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
 import { connectionString } from './config';
+import { storeConfig } from './services/storeConfig';
 
 const app: Express = express();
 const port = 8000;
@@ -45,7 +46,8 @@ app.post("/buildSchema", async (req: Request, res: Response) => {
             requestStatus[uniqueID] = { status: 'failed', error: error.message };
         });
 
-    res.json({ uniqueID });
+    res.json({ uniqueID, config });
+    storeConfig(connectionString, "audit_db", "schema", { uniqueID, config })
 });
 
 app.get("/checkStatus/", (req: Request, res: Response) => {
