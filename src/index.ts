@@ -3,15 +3,17 @@ import { MongoHelper } from './utils/mongoHelper';
 import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
-import { connectionString } from './config';
+import { MONGO_IDENTIFIER, connectionStrings } from './config';
 import { storeConfig } from './services/storeConfig';
+import { MongoConnectionManager } from './utils/mongoManager';
 
 const app: Express = express();
 const port = 8000;
 export let intervalWindow: number = 25 * 1000;  // Interval window in milliseconds
 export let fieldName: string | undefined; // Field name collected from the 3rd argument
 
-MongoHelper.createDbConnection(connectionString);
+MongoHelper.createDbConnection(connectionStrings[MONGO_IDENTIFIER["SCANNING_DB"]]!);
+
 app.use(bodyParser.json());
 
 interface Config {
@@ -30,13 +32,13 @@ const requestStatus: Record<string, Status> = {};
 
 app.post("/buildSchema", async (req: Request, res: Response) => {
     const config: Config = req.body;
-    const uniqueID = uuidv4();
+    const uniqueID = await storeConfig("audit_db", "schema", config)
     requestStatus[uniqueID] = { status: 'processing' };
 
     if (config.intervalWindow) intervalWindow = config.intervalWindow;
     if (config.fieldName) fieldName = config.fieldName;
 
-    processDocuments(connectionString, config.dbName, config.collectionName, uniqueID)
+    processDocuments(connectionStrings[MONGO_IDENTIFIER["SCANNING_DB"]]!, config.dbName, config.collectionName, uniqueID)
         .then(() => {
             if (requestStatus[uniqueID]) {
                 requestStatus[uniqueID]!.status = 'completed';
@@ -47,7 +49,7 @@ app.post("/buildSchema", async (req: Request, res: Response) => {
         });
 
     res.json({ uniqueID, config });
-    storeConfig(connectionString, "audit_db", "schema", { uniqueID, config })
+    
 });
 
 app.get("/checkStatus/", (req: Request, res: Response) => {
