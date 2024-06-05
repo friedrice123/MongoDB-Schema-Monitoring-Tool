@@ -13,54 +13,40 @@ export async function generateTypeScriptInterfaces(json: Record<string, any>, in
                 continue;
             }
             if (typeof value === 'string') {
+                console.log(value)
                 const types = value.split('|').map((t: string) => t.trim());
-                for (let i = 0; i < types.length; i++){
+                for (let i = 0; i < types.length; i++) {
                     const t = types[i];
-                    if (t!.endsWith('[]')) {
-                        // Handle array types
-                        const arrayType = t!.slice(0, -2);
-                        if(t![t!.length - 1] == ']' && t![t!.length - 2] == '[' && t![t!.length - 3] == '}'){
-                            let newt = t!.slice(0, t!.length - 2);
-                            newt = JsonToTS(newt);
-                            if(i === 0){
-                                if(types.length === 1){
-                                    interfaceContent += `  "${key}": ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)};\n`;
-                                }
-                                else interfaceContent += `  "${key}": ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}`;
+                    const arrayDepth = getArrayDepth(t!);
+                    let baseType = t;
+                    for (let j = 0; j < arrayDepth; j++) {
+                        baseType = stripArray(baseType!);
+                    }
+
+                    if (baseType!.startsWith('{')) {
+                        const newt = JsonToTS(baseType!);
+                        if (i === 0) {
+                            if (types.length === 1) {
+                                interfaceContent += `  "${key}": ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)};\n`;
+                            } else {
+                                interfaceContent += `  "${key}": ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)}`;
                             }
-                            else if (i === types.length - 1){
-                                interfaceContent += ` \| ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)};\n`;
-                            }
-                            else{
-                                interfaceContent += ` \| ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}`;
-                            }
-                        }
-                        else {
-                            if(i === 0){
-                                if(types.length === 1){
-                                    interfaceContent += `  "${key}": ${mapType(arrayType, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}[];\n`;
-                                }
-                                else interfaceContent += `  "${key}": ${mapType(arrayType, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}[]`;
-                            }
-                            else if (i === types.length - 1){
-                                interfaceContent += ` \| ${mapType(arrayType, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}[];\n`;
-                            }
-                            else{
-                                interfaceContent += ` \| ${mapType(arrayType, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}[]`;
-                            }
+                        } else if (i === types.length - 1) {
+                            interfaceContent += ` | ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)};\n`;
+                        } else {
+                            interfaceContent += ` | ${mapType(newt, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)}`;
                         }
                     } else {
-                        if(i === 0){
-                            if(types.length === 1){
-                                interfaceContent += `  "${key}": ${mapType(t!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)};\n`;
+                        if (i === 0) {
+                            if (types.length === 1) {
+                                interfaceContent += `  "${key}": ${mapType(baseType!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)};\n`;
+                            } else {
+                                interfaceContent += `  "${key}": ${mapType(baseType!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)}`;
                             }
-                            else interfaceContent += `  "${key}": ${mapType(t!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}`;
-                        }
-                        else if (i === types.length - 1){
-                            interfaceContent += ` \| ${mapType(t!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)};\n`;
-                        }
-                        else{
-                            interfaceContent += ` \| ${mapType(t!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}`;
+                        } else if (i === types.length - 1) {
+                            interfaceContent += ` | ${mapType(baseType!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)};\n`;
+                        } else {
+                            interfaceContent += ` | ${mapType(baseType!, `${currentInterfaceName}${interfaceNameRectify(capitalizeFirstLetter(key))}`)}${'[]'.repeat(arrayDepth)}`;
                         }
                     }
                 }
@@ -122,7 +108,19 @@ export async function generateTypeScriptInterfaces(json: Record<string, any>, in
         return `{${ts}}[]`;
     }
 
-    // Generate the main interface and any nested interfaces
+    function getArrayDepth(type: string): number {
+        let depth = 0;
+        while (type.endsWith('[]')) {
+            depth++;
+            type = stripArray(type);
+        }
+        return depth;
+    }
+
+    function stripArray(type: string): string {
+        return type.endsWith('[]') ? type.slice(0, -2) : type;
+    }
+
     interfaceDefinitions += parseObject(json, interfaceName);
     for (const [nestedInterfaceName, nestedInterfaceContent] of Object.entries(createdInterfaces)) {
         interfaceDefinitions += nestedInterfaceContent;
@@ -138,12 +136,15 @@ export function saveTypeScriptInterfacesToFile(interfaceName: string, interfaceC
     console.log(`TypeScript interfaces saved to ${filePath}`);
 }
 
-function interfaceNameRectify(interfaceName : string){
-    let rect :string = '';
-    for (let i = 0; i < interfaceName.length; i++){
+function interfaceNameRectify(interfaceName: string): string {
+    let rect = '';
+    for (let i = 0; i < interfaceName.length; i++) {
         const letter = interfaceName[i];
-        if(!((letter! >= 'A' && letter! <= 'Z') || (letter! >= 'a' && letter! <= 'z' || (letter! >= '0' && letter! <= '9') || (letter! === '_')))) rect += '_';
-        else rect += letter;
+        if (!((letter! >= 'A' && letter! <= 'Z') || (letter! >= 'a' && letter! <= 'z') || (letter! >= '0' && letter! <= '9') || (letter! === '_'))) {
+            rect += '_';
+        } else {
+            rect += letter;
+        }
     }
     return rect;
 }
