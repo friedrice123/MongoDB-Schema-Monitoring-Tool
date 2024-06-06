@@ -10,7 +10,8 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "concurrently \"rimraf ./dist\" \"npx tsc\"",
+    "dev": "ts-node-dev --poll src/index.ts",
+    "build": "concurrently \"rimraf ./dist\" \"tsc\"",
     "start": "npm run build",
     "serve": "concurrently \"npx tsc -w\" \"nodemon dist/index.js\""
   },
@@ -23,21 +24,22 @@
     "@types/node": "^20.12.12",
     "archiver": "^7.0.1",
     "body-parser": "^1.20.2",
-    "concurrently": "^8.2.2",
     "csv-parser": "^3.0.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "json-to-ts": "^2.1.0",
     "mongodb": "^6.6.2",
-    "nodemon": "^3.1.1",
     "papaparse": "^5.4.1",
-    "rimraf": "^5.0.7",
-    "typescript": "^5.4.5",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.2",
     "@types/papaparse": "^5.3.14",
-    "@types/uuid": "^9.0.8"
+    "@types/uuid": "^9.0.8",
+    "rimraf": "^5.0.7",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5",
+    "nodemon": "^3.1.1",
+    "concurrently": "^8.2.2"
   }
 }
