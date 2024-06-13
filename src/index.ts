@@ -3,7 +3,7 @@ import { MongoHelper } from './utils/mongoHelper';
 import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
-import { MONGO_IDENTIFIER, connectionStrings } from './config';
+import { MONGO_IDENTIFIER, auditCollectionName, auditdbName, connectionStrings } from './config';
 import { storeConfig } from './services/storeConfig';
 import { MongoConnectionManager } from './utils/mongoManager';
 
@@ -32,7 +32,7 @@ const requestStatus: Record<string, Status> = {};
 
 app.post("/buildSchema", async (req: Request, res: Response) => {
     const config: Config = req.body;
-    const uniqueID = await storeConfig("audit_db", "schema", config)
+    const uniqueID = await storeConfig(auditdbName, auditCollectionName, config)
     requestStatus[uniqueID] = { status: 'processing' };
 
     if (config.intervalWindow) intervalWindow = config.intervalWindow;

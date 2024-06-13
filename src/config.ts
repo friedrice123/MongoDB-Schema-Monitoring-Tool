@@ -1,12 +1,16 @@
 import * as dotenv from 'dotenv';
 delete process.env.SCANNING_DB_CONN_STRING;
 delete process.env.AUDIT_DB_CONN_STRING;
+delete process.env.AUDIT_DB_NAME;
+delete process.env.AUDIT_DB_COLLECTION_NAME;
 dotenv.config();
 export enum MONGO_IDENTIFIER {
     AUDIT_DB = 'AUDIT_DB',
     SCANNING_DB = 'SCANNING_DB',
 }
 
+export const auditdbName : string = process.env.AUDIT_DB_NAME!;
+export const auditCollectionName : string = process.env.AUDIT_DB_COLLECTION_NAME!;
 
 export const connectionStrings: Record<string, string> = {
     [MONGO_IDENTIFIER.AUDIT_DB]: process.env.AUDIT_DB_CONN_STRING!,
