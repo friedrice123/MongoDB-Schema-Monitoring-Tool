@@ -1,6 +1,5 @@
 import { MongoHelper } from '../utils/mongoHelper';
 import { ObjectId } from 'mongodb';
-import { CSVHelper } from '../utils/csvUtils';
 import { generateTypeScriptInterfaces, saveTypeScriptInterfacesToFile } from '../utils/generateInterfaceDefinition';
 import { generateFieldTypeJson } from '../utils/generateJSON';
 import { fieldName, intervalWindow } from '../index';
@@ -44,10 +43,6 @@ export async function processDocuments(connectionString: string, dbName: string,
     const endTime_all = Date.now();
     const fullTime = (endTime_all - startTime_all) / 1000;
     console.log(`Time taken for all documents: ${fullTime.toFixed(2)} seconds`);
-    // Save the information about the fields and their types to a CSV file
-    const csvFileName = `dump/${uniqueID}/${collectionName}.csv`;
-    const csvHelper = new CSVHelper(csvFileName);
-    await csvHelper.writeFieldCountsToCSV(fieldTypeCounts);
     // Save the information about the fields and their types to a JSON file
     const fieldTypeJson = await generateFieldTypeJson(fieldTypeCounts);
     const jsonFileName = `dump/${uniqueID}/${collectionName}.json`;

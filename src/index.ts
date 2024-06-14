@@ -2,10 +2,8 @@ import { processDocuments } from './services/processDocuments';
 import { MongoHelper } from './utils/mongoHelper';
 import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import { v4 as uuidv4 } from 'uuid';
 import { MONGO_IDENTIFIER, auditCollectionName, auditdbName, connectionStrings } from './config';
 import { storeConfig } from './services/storeConfig';
-import { MongoConnectionManager } from './utils/mongoManager';
 
 const app: Express = express();
 const port = 8000;

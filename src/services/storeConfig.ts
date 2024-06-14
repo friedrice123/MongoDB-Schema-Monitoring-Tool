@@ -1,4 +1,4 @@
-import { MongoClient, ObjectId } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import { MongoConnectionManager } from '../utils/mongoManager';
 import { MONGO_IDENTIFIER } from '../config';
 
