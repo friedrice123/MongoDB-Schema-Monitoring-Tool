@@ -13,7 +13,7 @@ export class MongoConnectionManager {
 
     static async getClient(identifier: string): Promise<MongoClient> {
         if (this.instances[identifier]!) {
-            this.instances[identifier]!.connect();
+            await this.instances[identifier]!.connect();
             return this.instances[identifier]!;
         }
         else{
@@ -41,9 +41,3 @@ export class MongoConnectionManager {
         }
     }
 }
-
-// Example usage:
-// const client1 = await MongoManager.getClient(MONGO_IDENTIFIER.DB1);
-// const client2 = await MongoManager.getClient(MONGO_IDENTIFIER.DB2);
-// await MongoManager.closeConnection(MONGO_IDENTIFIER.DB1);
-// await MongoManager.closeAllConnections();

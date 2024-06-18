@@ -2,12 +2,11 @@ import { MongoHelper } from '../utils/mongoHelper';
 import { ObjectId } from 'mongodb';
 import { generateTypeScriptInterfaces, saveTypeScriptInterfacesToFile } from '../utils/generateInterfaceDefinition';
 import { generateFieldTypeJson } from '../utils/generateJSON';
-import { fieldName, intervalWindow } from '../index';
 import fs from 'fs';
 import { batchProcessing } from '../utils/batchProcessing';
 import { createZipFile } from './zipCreator';
 
-export async function processDocuments(connectionString: string, dbName: string, collectionName: string, uniqueID: string) {
+export async function processDocuments(connectionString: string, dbName: string, collectionName: string, uniqueID: string, fieldName: string, intervalWindow: number) {
     const mongoHelper = new MongoHelper(connectionString);
     const collection = await mongoHelper.getCollection(dbName, collectionName);
     // Find information about the whole collection scanning documents in batches made according to their creation timestamp intervals
@@ -30,13 +29,13 @@ export async function processDocuments(connectionString: string, dbName: string,
             continue;
         }
         // Collect information about the fields, their types and number of documents they appear in
-        await batchProcessing(batchDocs, fieldTypeCounts, docsWithField);
+        await batchProcessing(batchDocs, fieldTypeCounts, docsWithField, fieldName);
         startTimestamp = endTimestamp;
     }
     if (!fs.existsSync(`dump/${uniqueID}`)) {
         fs.mkdirSync(`dump/${uniqueID}`);
     }
-    if (fieldName) {
+    if (fieldName !== '') {
         const jsonFileName = `dump/${uniqueID}/${collectionName}_${fieldName}.json`;
         fs.writeFileSync(jsonFileName, JSON.stringify(docsWithField, null, 2));
     }
@@ -52,7 +51,7 @@ export async function processDocuments(connectionString: string, dbName: string,
     const interfaceName : string = collectionName.charAt(0).toUpperCase() + collectionName.slice(1);
     const classContent = await generateTypeScriptInterfaces(fieldTypeJson, interfaceName);
     saveTypeScriptInterfacesToFile(collectionName, classContent, `dump/${uniqueID}`);
-    if(fieldName){
+    if(fieldName !== ''){
         const interfaceName : string = collectionName.charAt(0).toUpperCase() + collectionName.slice(1) + '_' + fieldName;
         const classContent = await generateTypeScriptInterfaces(docsWithField, interfaceName);
         saveTypeScriptInterfacesToFile(collectionName + '_' + fieldName, classContent, `dump/${uniqueID}`);
