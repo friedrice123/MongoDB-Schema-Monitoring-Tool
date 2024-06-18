@@ -7,8 +7,7 @@ import { storeConfig } from './services/storeConfig';
 
 const app: Express = express();
 const port = 8000;
-export let intervalWindow: number = 25 * 1000;  // Interval window in milliseconds
-export let fieldName: string | undefined; // Field name collected from the 3rd argument
+
 
 MongoHelper.createDbConnection(connectionStrings[MONGO_IDENTIFIER["SCANNING_DB"]]!);
 
@@ -32,11 +31,12 @@ app.post("/buildSchema", async (req: Request, res: Response) => {
     const config: Config = req.body;
     const uniqueID = await storeConfig(auditdbName, auditCollectionName, config)
     requestStatus[uniqueID] = { status: 'processing' };
-
+    let intervalWindow: number = 25 * 1000;  // Interval window in milliseconds
+    let fieldName: string = ''; // Field name collected from the 3rd argument
     if (config.intervalWindow) intervalWindow = config.intervalWindow;
     if (config.fieldName) fieldName = config.fieldName;
 
-    processDocuments(connectionStrings[MONGO_IDENTIFIER["SCANNING_DB"]]!, config.dbName, config.collectionName, uniqueID)
+    processDocuments(connectionStrings[MONGO_IDENTIFIER["SCANNING_DB"]]!, config.dbName, config.collectionName, uniqueID, fieldName, intervalWindow)
         .then(() => {
             if (requestStatus[uniqueID]) {
                 requestStatus[uniqueID]!.status = 'completed';

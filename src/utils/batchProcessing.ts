@@ -1,8 +1,7 @@
-import { fieldName } from "../index";
 import { documentLevelSchema } from "../services/documentLevelRetrieval";
 import { flattenDocument } from "./flattenDocument";
 
-export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<string, number>, docsWithField: Record<string, any>) {
+export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<string, number>, docsWithField: Record<string, any>, fieldName: string) {
     // Loop through each document in the batch
     for (const doc of batchDocs) {
         // Lay down all the objects as a flat structure showing the fields inside the objects in a recursive fashion
@@ -16,7 +15,7 @@ export async function batchProcessing(batchDocs: any[], fieldTypeCounts: Record<
             } else {
                 fieldTypeCounts[fieldTypePair] = 1;
             }
-            if (fieldName === field) {
+            if (fieldName === field && fieldName !== '') {
                 const value = doc[fieldName];
                 if (typeof value === 'string') {
                     documentLevelSchema(fieldName, value, doc, docsWithField);
