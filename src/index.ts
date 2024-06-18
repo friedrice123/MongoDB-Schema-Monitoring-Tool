@@ -33,6 +33,10 @@ app.post("/buildSchema", async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Missing required fields: dbName and collectionName' });
     }
 
+    if(typeof config.dbName != "string" || typeof config.collectionName != "string"){
+        return res.status(400).json({ error: 'Please use string type for the config details'});
+    }
+
     try {
         const uniqueID = await storeConfig(auditdbName, auditCollectionName, config);
         requestStatus[uniqueID] = { status: 'processing' };
@@ -72,7 +76,7 @@ app.get("/checkStatus/", (req: Request, res: Response) => {
 
 app.get("/download/", (req: Request, res: Response) => {
     const { id } = req.query;
-    if (typeof id !== 'string') {
+    if (typeof id !== 'string' || !id) {
         return res.status(400).json({ error: 'Invalid or missing id query parameter' });
     }
     res.download(`dump/${id}.zip`, `${id}.zip`, (err) => {
