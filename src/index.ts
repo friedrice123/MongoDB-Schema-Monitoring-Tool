@@ -2,7 +2,7 @@ import { processDocuments } from './services/processDocuments';
 import { MongoHelper } from './utils/mongoHelper';
 import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import { MONGO_IDENTIFIER, auditCollectionName, auditdbName, connectionStrings } from './config';
+import { MONGO_IDENTIFIER, auditCollectionName, auditdbName, connectionStrings, auditEnvironment } from './config';
 import { storeConfig } from './services/storeConfig';
 
 const app: Express = express();
@@ -17,6 +17,7 @@ interface Config {
     collectionName: string;
     intervalWindow?: number;
     fieldName?: string;
+    environment?: string;
 }
 
 interface Status {
@@ -44,6 +45,7 @@ app.post("/buildSchema", async (req: Request, res: Response) => {
         let fieldName: string = ''; // Field name collected from the 3rd argument
         if (config.intervalWindow) intervalWindow = config.intervalWindow;
         if (config.fieldName) fieldName = config.fieldName;
+        config.environment = auditEnvironment;
 
         processDocuments(connectionStrings[MONGO_IDENTIFIER["SCANNING_DB"]]!, config.dbName, config.collectionName, uniqueID, fieldName, intervalWindow)
             .then(() => {

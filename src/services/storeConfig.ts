@@ -7,6 +7,7 @@ interface Config {
     collectionName: string;
     intervalWindow?: number;
     fieldName?: string;
+    environment?: string;
 }
 
 export async function storeConfig(dbName: string, collectionName: string, response: Config): Promise<string> {
