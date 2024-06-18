@@ -1,8 +1,4 @@
 import * as dotenv from 'dotenv';
-delete process.env.SCANNING_DB_CONN_STRING;
-delete process.env.AUDIT_DB_CONN_STRING;
-delete process.env.AUDIT_DB_NAME;
-delete process.env.AUDIT_DB_COLLECTION_NAME;
 dotenv.config();
 export enum MONGO_IDENTIFIER {
     AUDIT_DB = 'AUDIT_DB',
