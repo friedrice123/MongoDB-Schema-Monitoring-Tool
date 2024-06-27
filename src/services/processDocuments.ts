@@ -32,6 +32,9 @@ export async function processDocuments(connectionString: string, dbName: string,
         await batchProcessing(batchDocs, fieldTypeCounts, docsWithField, fieldName);
         startTimestamp = endTimestamp;
     }
+    if (!fs.existsSync(`dump`)) {
+        fs.mkdirSync(`dump`);
+    }
     if (!fs.existsSync(`dump/${uniqueID}`)) {
         fs.mkdirSync(`dump/${uniqueID}`);
     }
