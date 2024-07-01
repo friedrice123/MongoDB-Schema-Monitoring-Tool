@@ -65,7 +65,7 @@ app.post("/buildSchema", async (req: Request, res: Response) => {
 
 app.get("/checkStatus/", (req: Request, res: Response) => {
     const { id } = req.query;
-    if (typeof id !== 'string') {
+    if (typeof id !== 'string') { 
         return res.status(400).json({ error: 'Invalid or missing id query parameter' });
     }
     const status = requestStatus[id];
@@ -88,7 +88,11 @@ app.get("/download/", (req: Request, res: Response) => {
     });
 });
 
-app.get("/healthcheck", (req: Request, res: Response) => {
+app.get("/", (req: Request, res: Response) => {
+    res.sendStatus(200);
+});
+
+app.post("/", (req: Request, res: Response) => {
     res.sendStatus(200);
 });
 
