@@ -88,6 +88,10 @@ app.get("/download/", (req: Request, res: Response) => {
     });
 });
 
+app.get("/healthcheck", (req: Request, res: Response) => {
+    res.sendStatus(200);
+});
+
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
