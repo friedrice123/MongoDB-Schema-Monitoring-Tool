@@ -1,0 +1,118 @@
+openapi: 3.0.0
+info:
+  title: Schema Generator API
+  description: This API allows you to build Typescript interfaces for a MongodDB collection
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local server
+
+paths:
+  /buildSchema:
+    post:
+      summary: Build Schema
+      description: |
+        This request can be used to send the database and collection name for which you want to build a Typescript interface.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dbName:
+                  type: string
+                  example: sample_mflix
+                collectionName:
+                  type: string
+                  example: movies
+                fieldName:
+                  type: string
+                  example: type
+                intervalWindow:
+                  type: integer
+                  example: 25
+              required:
+                - dbName
+                - collectionName
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: dummmy-id
+
+  /checkStatus:
+    get:
+      summary: Check Status
+      description: |
+        Use this request to check the status of your request to keep track whether it completed, or it is in processing, or it failed.
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The ID of the request
+          example: dummy-id
+      responses:
+        '200':
+          description: Status response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: completed
+
+  /downloadZip:
+    get:
+      summary: Download Zip
+      description: |
+        Use this request to download a zip file of the Typescript file containing the interface and a schema in JSON format.
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The ID of the request
+          example: dummy-id
+      responses:
+        '200':
+          description: Zip file response
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+components:
+  schemas:
+    RequestBody:
+      type: object
+      properties:
+        dbName:
+          type: string
+        collectionName:
+          type: string
+        fieldName:
+          type: string
+        intervalWindow:
+          type: integer
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    ZipResponse:
+      type: string
+      format: binary

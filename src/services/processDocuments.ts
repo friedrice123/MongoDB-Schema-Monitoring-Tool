@@ -5,6 +5,7 @@ import { generateFieldTypeJson } from '../utils/generateJSON';
 import fs from 'fs';
 import { batchProcessing } from '../utils/batchProcessing';
 import { createZipFile } from './zipCreator';
+import { CSVHelper } from '../utils/csvUtils';
 
 export async function processDocuments(connectionString: string, dbName: string, collectionName: string, uniqueID: string, fieldName: string, intervalWindow: number) {
     const mongoHelper = new MongoHelper(connectionString);
@@ -45,6 +46,11 @@ export async function processDocuments(connectionString: string, dbName: string,
     const endTime_all = Date.now();
     const fullTime = (endTime_all - startTime_all) / 1000;
     console.log(`Time taken for all documents: ${fullTime.toFixed(2)} seconds`);
+     // Save the information about the fields and their types to a CSV file
+     const csvFileName = `dump/${uniqueID}/${collectionName}.csv`;
+     const csvHelper = new CSVHelper(csvFileName);
+     await csvHelper.writeFieldCountsToCSV(fieldTypeCounts);
+     console.log("CSV added")
     // Save the information about the fields and their types to a JSON file
     const fieldTypeJson = await generateFieldTypeJson(fieldTypeCounts);
     const jsonFileName = `dump/${uniqueID}/${collectionName}.json`;

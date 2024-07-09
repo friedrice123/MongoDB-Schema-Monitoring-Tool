@@ -6,7 +6,7 @@ import { MONGO_IDENTIFIER, auditCollectionName, auditdbName, connectionStrings, 
 import { storeConfig } from './services/storeConfig';
 
 const app: Express = express();
-const port = 8002;
+const port = 8001;
 
 MongoHelper.createDbConnection(connectionStrings[MONGO_IDENTIFIER["SCANNING_DB"]]!);
 
